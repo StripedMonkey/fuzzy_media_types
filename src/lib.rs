@@ -6,6 +6,28 @@
 //! --
 //! Based on [RFC-7231](https://www.rfc-editor.org/rfc/rfc7231) and [RFC-2046](https://www.rfc-editor.org/rfc/rfc2046)
 //! and originally developed from [RFC-1049](https://www.rfc-editor.org/rfc/rfc1049)
+//! Media types specify the contents of a message or body, but can be more specific than your code requires
+//! Any media type that is *less specific* should match.
+//! ```
+//! use fuzzy_mime::BorrowedMediaType;
+//! let media_type = BorrowedMediaType::parse("application/json;charset=utf-8").unwrap();
+//! assert!(media_type.matches("application/json"))
+//! ```
+//! Mime types which are more specific will *fail*
+//! ```should_panic
+//! use fuzzy_mime::BorrowedMediaType;
+//! let media_type = BorrowedMediaType::parse("application/json").unwrap();
+//! assert!(media_type.matches("application/json;charset=utf-8"))
+//! ```
+//!
+//! Structured types that extend another also work
+//! ```
+//! use fuzzy_mime::BorrowedMediaType;
+//! let media_type = BorrowedMediaType::parse("application/vnd.docker.distribution.manifest.v1+json").unwrap();
+//! assert!(media_type.matches("application/json"))
+//! ```
+
+
 use std::{
     collections::{hash_map::Iter, HashMap},
     fmt::{Debug, Display},
@@ -15,27 +37,6 @@ use std::{
 
 /// A borrowed Media-Type
 /// The main type everything is implemented for
-///
-/// Media types specify the contents of a message or body, but can be more specific than your code requires
-/// Any media type that is *less specific* should match.
-/// ```
-/// use fuzzy_mime::BorrowedMediaType;
-/// let media_type = BorrowedMediaType::parse("application/json;charset=utf-8").unwrap();
-/// assert!(media_type.matches("application/json"))
-/// ```
-/// Mime types which are more specific will *fail*
-/// ```should_panic
-/// use fuzzy_mime::BorrowedMediaType;
-/// let media_type = BorrowedMediaType::parse("application/json").unwrap();
-/// assert!(media_type.matches("application/json;charset=utf-8"))
-/// ```
-///
-/// Structured types that extend another also work
-/// ```
-/// use fuzzy_mime::BorrowedMediaType;
-/// let media_type = BorrowedMediaType::parse("application/vnd.docker.distribution.manifest.v1+json").unwrap();
-/// assert!(media_type.matches("application/json"))
-/// ```
 #[derive(Debug)]
 pub struct BorrowedMediaType<'a> {
     primary_type: &'a str,
