@@ -11,6 +11,8 @@ use std::{
     fmt::{Debug, Display},
 };
 
+// TODO: Stop conflating Content-Type and Media-Type
+
 /// A borrowed Media-Type
 /// The main type everything is implemented for
 ///
@@ -43,9 +45,19 @@ pub struct BorrowedMediaType<'a> {
     parameters: HashMap<String, &'a str>,
 }
 
+/// Possible errors when parsing a Media-Type
+#[derive(Debug)]
+pub enum ParseError {
+    /// Generic invalid Media-Type
+    InvalidMediaType,
+    /// Invalid Content-Type style parameters detected
+    InvalidParameter,
+}
+
 impl<'a> BorrowedMediaType<'a> {
     /// Try to parse a Content-Type string
-    pub fn parse(content_type_str: &str) -> Result<BorrowedMediaType, ()> {
+    /// Will return [`ParseError`]
+    pub fn parse(content_type_str: &str) -> Result<BorrowedMediaType, ParseError> {
         // There's no possbile way this could be incorrect
         let structured;
         let unstructured;
@@ -54,6 +66,7 @@ impl<'a> BorrowedMediaType<'a> {
                 if let Some(type_parts) = sub_type.rsplit_once('+') {
                     (unstructured, structured) = type_parts
                 } else {
+                    // There's surely a better way to handle there not being a structured component
                     (unstructured, structured) = (sub_type, sub_type)
                 }
                 // "Unlike some similar constructs in other header fields, media type
@@ -68,7 +81,7 @@ impl<'a> BorrowedMediaType<'a> {
                             maybe_quoted.trim_matches('"'),
                         );
                     } else {
-                        return Err(()); // Empty parameters?
+                        return Err(ParseError::InvalidParameter); // Empty parameters?
                     }
                 }
                 Ok(BorrowedMediaType {
@@ -93,7 +106,7 @@ impl<'a> BorrowedMediaType<'a> {
                 })
             }
         } else {
-            Err(()) // No Subtype?
+            Err(ParseError::InvalidMediaType) // No Subtype?
         }
     }
 
@@ -149,7 +162,7 @@ impl<'a> BorrowedMediaType<'a> {
 }
 
 impl<'a> TryFrom<&'a str> for BorrowedMediaType<'a> {
-    type Error = ();
+    type Error = ParseError;
 
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
         BorrowedMediaType::parse(value)
@@ -310,12 +323,7 @@ mod tests {
             ("application/json", "application/json;charset=utf-8"),
         ];
         assert_matches(shouldnt_match, |a, b| {
-            assert!(
-                !a.matches(b),
-                "{} matched with {} when it shouldn't!",
-                a,
-                b
-            );
+            assert!(!a.matches(b), "{} matched with {} when it shouldn't!", a, b);
         });
     }
 
@@ -354,12 +362,7 @@ mod tests {
             ),
         ];
         assert_matches(shouldnt_match, |a, b| {
-            assert!(
-                !a.matches(b),
-                "{} matched with {} when it shouldn't!",
-                a,
-                b
-            );
+            assert!(!a.matches(b), "{} matched with {} when it shouldn't!", a, b);
         });
     }
 
