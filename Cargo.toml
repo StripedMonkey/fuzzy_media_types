@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "A Mime-Type parsing library for rust"
 license = "MIT"
+repository = "https://github.com/StripedMonkey/fuzzy_media_types/"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
