@@ -309,19 +309,14 @@ mod tests {
             ("text/json", "text/json;charset=utf-8"),
             ("application/json", "application/json;charset=utf-8"),
         ];
-        for set in shouldnt_match.iter().map(|x| {
-            (
-                BorrowedMediaType::parse(x.0).unwrap(),
-                BorrowedMediaType::parse(x.1).unwrap(),
-            )
-        }) {
+        assert_matches(shouldnt_match, |a, b| {
             assert!(
-                !set.0.matches(&set.1),
+                !a.matches(b),
                 "{} matched with {} when it shouldn't!",
-                set.0,
-                set.1
+                a,
+                b
             );
-        }
+        });
     }
 
     #[test]
@@ -337,19 +332,14 @@ mod tests {
             ),
             ("application/aif+cbor", "application/aif"),
         ];
-        for set in should_match.iter().map(|x| {
-            (
-                BorrowedMediaType::parse(x.0).unwrap(),
-                BorrowedMediaType::parse(x.1).unwrap(),
-            )
-        }) {
+        assert_matches(should_match, |a, b| {
             assert!(
-                set.0.matches(&set.1),
+                a.matches(b),
                 "{} didn't match with {} when it should!",
-                set.0,
-                set.1
+                a,
+                b
             )
-        }
+        });
     }
 
     #[test]
@@ -363,19 +353,14 @@ mod tests {
                 "application/elm+xml",
             ),
         ];
-        for set in shouldnt_match.iter().map(|x| {
-            (
-                BorrowedMediaType::parse(x.0).unwrap(),
-                BorrowedMediaType::parse(x.1).unwrap(),
-            )
-        }) {
+        assert_matches(shouldnt_match, |a, b| {
             assert!(
-                !set.0.matches(&set.1),
+                !a.matches(b),
                 "{} matched with {} when it shouldn't!",
-                set.0,
-                set.1
+                a,
+                b
             );
-        }
+        });
     }
 
     #[test]
@@ -402,5 +387,27 @@ mod tests {
                 "application/json",
             ),
         ];
+        assert_matches(should_match, |a, b| {
+            assert!(
+                a.matches(b),
+                "{} didn't match with {} when it should!",
+                a,
+                b
+            )
+        });
+    }
+
+    fn assert_matches<F>(should_match: Vec<(&str, &str)>, assertion: F)
+    where
+        F: Fn(&BorrowedMediaType, &BorrowedMediaType),
+    {
+        for (a, b) in should_match.iter().map(|x| {
+            (
+                BorrowedMediaType::parse(x.0).unwrap(),
+                BorrowedMediaType::parse(x.1).unwrap(),
+            )
+        }) {
+            assertion(&a, &b)
+        }
     }
 }
